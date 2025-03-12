@@ -122,7 +122,7 @@
     }
 
     .cantidad-pesos {
-      background-color: rgba(245, 245, 245, 0.8);
+      background-color: white
       padding: 8px;
       margin: 5px 0;
       border-radius: 3px;
@@ -135,7 +135,7 @@
     }
 
     .total-box {
-      background-color: rgba(255, 255, 255, 0.9);
+      background-color: rgba(255, 255, 255, 1);
       border: 1px solid #000;
       padding: 10px;
       margin: 10px 0;
@@ -149,9 +149,8 @@
 
     .firma {
       margin-top: 20px;
-      margin-right: 50px;
+      padding-right: 50px;
       text-align: center;
-
     }
 
     .firma strong {
@@ -233,19 +232,16 @@
     /* Expanded styles for cantidad-pesos fields */
     #cantidad-pesos-1 {
       min-height: 50px;
-      background-color: transparent;
-      border: none;
+      border-bottom: #000 1px solid;
     }
 
     #cantidad-pesos-2 {
-      min-height: 25px;
-      background-color: transparent;
-      border: none;
+      min-height: 25px;border-bottom: #000 1px solid;
     }
 
     /* Replace the textarea styling with better looking divs */
     .cantidad-pesos-display {
-      background-color: rgba(255, 255, 255, 0.85);
+      background-color: rgba(255, 255, 255, 1);
       border: 1px solid rgba(0, 0, 0, 0.2);
       border-radius: 4px;
       padding: 8px 12px;
@@ -264,6 +260,12 @@
     /* Hide the textareas used for PDF generation */
     .hidden-for-pdf {
       display: none;
+    }
+
+    .sign-box{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
   </style>
 </head>
@@ -369,14 +371,14 @@
           <input type="text" id="concepto-line2-right">
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <div class="sign-box" style="display: flex; justify-content: space-between; margin-top: 20px;">
           <div class="total-box">
             <span class="total-label">TOTAL $</span>
             <input type="text" id="total-right" class="currency">
           </div>
           <div class="firma">
             <img src="https://png.pngtree.com/png-clipart/20230621/original/pngtree-signature-vector-png-image_9194695.png" 
-                alt="Firma" style="width: 150px; height: auto; margin-bottom: 5px;">
+                alt="Firma" style="width: 150px; height: auto;">
             <br>
             <strong>RICARDO A. J. GONZALEZ</strong>
             <br>
