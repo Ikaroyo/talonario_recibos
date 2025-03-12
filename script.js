@@ -1,199 +1,156 @@
 // Wait for DOM to be fully loaded before attaching event listeners
 document.addEventListener('DOMContentLoaded', function() {
-  // Check if image upload elements exist before adding listeners
-  const logoMainUpload = document.getElementById('logo-main-upload');
-  const logoLeftUpload = document.getElementById('logo-left-upload');
-
-  if (logoMainUpload) {
-    logoMainUpload.addEventListener('change', function (e) {
-      if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          document.getElementById('logo-main').src = event.target.result;
-        }
-        reader.readAsDataURL(e.target.files[0]);
-      }
-    });
-  }
-
-  if (logoLeftUpload) {
-    logoLeftUpload.addEventListener('change', function (e) {
-      if (e.target.files && e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (event) {
-          document.getElementById('logo-left').src = event.target.result;
-        }
-        reader.readAsDataURL(e.target.files[0]);
-      }
-    });
-  }
-
-  // Function to synchronize fields between left and right sides
-  function syncFields(leftId, rightId) {
-    const leftElement = document.getElementById(leftId);
-    const rightElement = document.getElementById(rightId);
-    
-    if (leftElement && rightElement) {
-      leftElement.addEventListener('input', function () {
-        rightElement.value = this.value;
-      });
-
-      rightElement.addEventListener('input', function () {
-        leftElement.value = this.value;
-      });
-    }
-  }
-
-  // Synchronize all required fields
-  // Numero de recibo
-  syncFields('numero-left', 'numero-right');
+  // Clear out existing event listeners and reimplementing
+  detachAndReattachListeners();
   
-  // Fecha
-  syncFields('dia-left', 'dia-right');
-  syncFields('mes-left', 'mes-right');
-  syncFields('anio-left', 'anio-right');
-  
-  // Nombre
-  syncFields('nombre-left', 'nombre-right');
-  
-  // Domicilio
-  syncFields('domicilio-left', 'domicilio-right');
-  
-  // CUIT
-  syncFields('cuit-left', 'cuit-right');
-  
-  // Importe/Total
-  syncFields('importe-left', 'total-right');
-  
-  // Concepto
-  syncFields('concepto-line1-left', 'concepto-line1-right');
-  syncFields('concepto-line2-left', 'concepto-line2-right');
-
-  // Improved conversion to handle cents
-  function formatImporteValue(value) {
-    if (value) {
-      // Format number with proper thousand separators and decimal places
-      return new Intl.NumberFormat('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-      }).format(value);
-    }
-    return '';
-  }
-
-  // Improved handling for the importe field with better display
-  const importeLeft = document.getElementById('importe-left');
-  if (importeLeft) {
-    importeLeft.addEventListener('input', function () {
-      // Parse the value to get a clean number
-      const rawValue = this.value.replace(/[^\d.,]/g, '').replace(',', '.');
-      const importeValue = parseFloat(rawValue) || 0;
-      const cantidadPesos1 = document.getElementById('cantidad-pesos-1');
-      const cantidadPesos2 = document.getElementById('cantidad-pesos-2');
-      
-      if (importeValue > 0 && cantidadPesos1 && cantidadPesos2) {
-        // Get integer and decimal parts
-        const integerPart = Math.floor(importeValue);
-        const decimalPart = Math.round((importeValue - integerPart) * 100);
-        
-        // Generate text for pesos and cents with proper Spanish grammar
-        let pesosText = "";
-        if (integerPart === 1) {
-          pesosText = "un peso";
-        } else {
-          pesosText = numeroALetras(integerPart) + " pesos";
-        }
-        
-        let centsText = "";
-        if (decimalPart > 0) {
-          if (decimalPart === 1) {
-            centsText = " con un centavo";
-          } else {
-            centsText = " con " + numeroALetras(decimalPart) + " centavos";
-          }
-        }
-        
-        // Set text content instead of value for divs
-        cantidadPesos1.textContent = pesosText + centsText;
-        cantidadPesos2.textContent = `($ ${formatImporteValue(importeValue)})`;
-
-        // Update total in right side
-        const totalRight = document.getElementById('total-right');
-        if (totalRight) {
-          totalRight.value = formatImporteValue(importeValue);
-        }
-      } else if (cantidadPesos1 && cantidadPesos2) {
-        cantidadPesos1.textContent = '';
-        cantidadPesos2.textContent = '';
-      }
-    });
-  }
-  
-  // Function to adjust textarea height based on content
-  function adjustTextareaHeight(textarea) {
-    if (!textarea) return;
-    
-    // Reset height to calculate proper scrollHeight
-    textarea.style.height = 'auto';
-    
-    // Set height to scrollHeight to fit all content
-    const scrollHeight = textarea.scrollHeight;
-    textarea.style.height = scrollHeight + 'px';
-  }
-
-  // Format the input when user finishes typing
-  importeLeft.addEventListener('blur', function() {
-    if (this.value) {
-      const rawValue = this.value.replace(/[^\d.,]/g, '').replace(',', '.');
-      const importeValue = parseFloat(rawValue) || 0;
-      this.value = formatImporteValue(importeValue);
-    }
-  });
-  
-  const totalRight = document.getElementById('total-right');
-  if (totalRight) {
-    totalRight.addEventListener('input', function () {
-      // Also update cantidad-pesos when total changes from right side
-      const event = new Event('input');
-      importeLeft.dispatchEvent(event);
-    });
-    
-    // Format the input when user finishes typing
-    totalRight.addEventListener('blur', function() {
-      if (this.value) {
-        const rawValue = this.value.replace(/[^\d.,]/g, '').replace(',', '.');
-        const importeValue = parseFloat(rawValue) || 0;
-        this.value = formatImporteValue(importeValue);
-      }
-    });
-  }
-
-  // Save last receipt number
-  const numeroLeft = document.getElementById('numero-left');
-  const numeroRight = document.getElementById('numero-right');
+  // Set default date to today
+  setTodayDate();
   
   // Load the last saved receipt number
   const lastReceiptNumber = localStorage.getItem('lastReceiptNumber') || '000000';
+  const numeroLeft = document.getElementById('numero-left');
+  const numeroRight = document.getElementById('numero-right');
   if (numeroLeft && numeroRight) {
     numeroLeft.value = lastReceiptNumber;
     numeroRight.value = lastReceiptNumber;
-    
-    // Save the receipt number whenever it changes
-    numeroLeft.addEventListener('change', function() {
-      localStorage.setItem('lastReceiptNumber', this.value);
-    });
-    
-    numeroRight.addEventListener('change', function() {
-      localStorage.setItem('lastReceiptNumber', this.value);
-    });
   }
-
-  // Set default date to today
-  setTodayDate();
-
-  // Log to check if script is loading
+  
   console.log('Script initialized - DOM fully loaded');
 });
+
+// Function to remove all existing listeners and reattach them properly
+function detachAndReattachListeners() {
+  // Define field pairs to sync - this ensures we don't miss any
+  const fieldPairs = [
+    ['numero-left', 'numero-right'],
+    ['dia-left', 'dia-right'],
+    ['mes-left', 'mes-right'],
+    ['anio-left', 'anio-right'],
+    ['nombre-left', 'nombre-right'],
+    ['domicilio-left', 'domicilio-right'],
+    ['cuit-left', 'cuit-right'],
+    ['concepto-line1-left', 'concepto-line1-right'],
+    ['concepto-line2-left', 'concepto-line2-right']
+  ];
+  
+  // Special handling for importe/total fields
+  setupImporteListeners();
+  
+  // Set up all other field pairs
+  fieldPairs.forEach(pair => {
+    const leftElem = document.getElementById(pair[0]);
+    const rightElem = document.getElementById(pair[1]);
+    
+    if (leftElem && rightElem) {
+      // Clear existing listeners
+      leftElem.removeAttribute('oninput');
+      rightElem.removeAttribute('oninput');
+      
+      // Clean clone to remove all event listeners
+      const newLeftElem = leftElem.cloneNode(true);
+      const newRightElem = rightElem.cloneNode(true);
+      
+      leftElem.parentNode.replaceChild(newLeftElem, leftElem);
+      rightElem.parentNode.replaceChild(newRightElem, rightElem);
+      
+      // Add fresh event listeners
+      newLeftElem.addEventListener('input', function() {
+        newRightElem.value = this.value;
+      });
+      
+      newRightElem.addEventListener('input', function() {
+        newLeftElem.value = this.value;
+      });
+    }
+  });
+}
+
+function setupImporteListeners() {
+  const importeLeft = document.getElementById('importe-left');
+  const totalRight = document.getElementById('total-right');
+  
+  if (importeLeft && totalRight) {
+    // Clear existing listeners
+    importeLeft.removeAttribute('oninput');
+    totalRight.removeAttribute('oninput');
+    
+    // Clean clone to remove all event listeners
+    const newImporteLeft = importeLeft.cloneNode(true);
+    const newTotalRight = totalRight.cloneNode(true);
+    
+    importeLeft.parentNode.replaceChild(newImporteLeft, importeLeft);
+    totalRight.parentNode.replaceChild(newTotalRight, totalRight);
+    
+    // Add fresh event listeners
+    newImporteLeft.addEventListener('input', function() {
+      newTotalRight.value = this.value;
+      updateCantidadPesos(this.value);
+    });
+    
+    newTotalRight.addEventListener('input', function() {
+      newImporteLeft.value = this.value;
+      updateCantidadPesos(this.value);
+    });
+    
+    // Format on blur
+    newImporteLeft.addEventListener('blur', function() {
+      if (this.value) {
+        const rawValue = this.value.replace(/[^\d.,]/g, '').replace(',', '.');
+        const numericValue = parseFloat(rawValue) || 0;
+        this.value = formatImporteValue(numericValue);
+        newTotalRight.value = this.value;
+      }
+    });
+    
+    newTotalRight.addEventListener('blur', function() {
+      if (this.value) {
+        const rawValue = this.value.replace(/[^\d.,]/g, '').replace(',', '.');
+        const numericValue = parseFloat(rawValue) || 0;
+        this.value = formatImporteValue(numericValue);
+        newImporteLeft.value = this.value;
+      }
+    });
+  }
+}
+
+// Function to update cantidad-pesos fields
+function updateCantidadPesos(value) {
+  // Parse the value to get a clean number
+  const rawValue = String(value).replace(/[^\d.,]/g, '').replace(',', '.');
+  const importeValue = parseFloat(rawValue) || 0;
+  const cantidadPesos1 = document.getElementById('cantidad-pesos-1');
+  const cantidadPesos2 = document.getElementById('cantidad-pesos-2');
+  
+  if (importeValue > 0 && cantidadPesos1 && cantidadPesos2) {
+    // Get integer and decimal parts
+    const integerPart = Math.floor(importeValue);
+    const decimalPart = Math.round((importeValue - integerPart) * 100);
+    
+    // Generate text for pesos and cents with proper Spanish grammar
+    let pesosText = "";
+    if (integerPart === 1) {
+      pesosText = "un peso";
+    } else {
+      pesosText = numeroALetras(integerPart) + " pesos";
+    }
+    
+    let centsText = "";
+    if (decimalPart > 0) {
+      if (decimalPart === 1) {
+        centsText = " con un centavo";
+      } else {
+        centsText = " con " + numeroALetras(decimalPart) + " centavos";
+      }
+    }
+    
+    // Set text content
+    cantidadPesos1.textContent = pesosText + centsText;
+    cantidadPesos2.textContent = `($ ${formatImporteValue(importeValue)})`;
+  } else if (cantidadPesos1 && cantidadPesos2) {
+    cantidadPesos1.textContent = '';
+    cantidadPesos2.textContent = '';
+  }
+}
 
 // Improved Spanish number to words function
 function numeroALetras(numero) {
@@ -516,3 +473,89 @@ window.resetForm = nuevoRecibo;
 window.guardarPDF = guardarPDF;
 window.nuevoRecibo = nuevoRecibo;
 window.limpiarCampos = limpiarCampos;
+
+// Ensure importe field updates cantidad-pesos when modified from either side
+document.addEventListener('DOMContentLoaded', function() {
+  // Re-initialize sync for importe and total
+  const importeLeft = document.getElementById('importe-left');
+  const totalRight = document.getElementById('total-right');
+  
+  if (importeLeft && totalRight) {
+    // Direct synchronization without using syncFields function
+    ['input', 'change', 'paste'].forEach(eventType => {
+      importeLeft.addEventListener(eventType, function() {
+        totalRight.value = this.value;
+        updateCantidadPesos(this.value);
+      });
+      
+      totalRight.addEventListener(eventType, function() {
+        importeLeft.value = this.value;
+        updateCantidadPesos(this.value);
+      });
+    });
+    
+    // Format on blur
+    importeLeft.addEventListener('blur', formatCurrencyField);
+    totalRight.addEventListener('blur', formatCurrencyField);
+  }
+});
+
+// Separate function to update cantidad-pesos
+function updateCantidadPesos(value) {
+  // Parse the value to get a clean number
+  const rawValue = String(value).replace(/[^\d.,]/g, '').replace(',', '.');
+  const importeValue = parseFloat(rawValue) || 0;
+  const cantidadPesos1 = document.getElementById('cantidad-pesos-1');
+  const cantidadPesos2 = document.getElementById('cantidad-pesos-2');
+  
+  if (importeValue > 0 && cantidadPesos1 && cantidadPesos2) {
+    // Get integer and decimal parts
+    const integerPart = Math.floor(importeValue);
+    const decimalPart = Math.round((importeValue - integerPart) * 100);
+    
+    // Generate text for pesos and cents with proper Spanish grammar
+    let pesosText = "";
+    if (integerPart === 1) {
+      pesosText = "un peso";
+    } else {
+      pesosText = numeroALetras(integerPart) + " pesos";
+    }
+    
+    let centsText = "";
+    if (decimalPart > 0) {
+      if (decimalPart === 1) {
+        centsText = " con un centavo";
+      } else {
+        centsText = " con " + numeroALetras(decimalPart) + " centavos";
+      }
+    }
+    
+    // Set text content
+    cantidadPesos1.textContent = pesosText + centsText;
+    cantidadPesos2.textContent = `($ ${formatImporteValue(importeValue)})`;
+  } else if (cantidadPesos1 && cantidadPesos2) {
+    cantidadPesos1.textContent = '';
+    cantidadPesos2.textContent = '';
+  }
+}
+
+// Helper function to format currency values
+function formatCurrencyField() {
+  if (this.value) {
+    const rawValue = this.value.replace(/[^\d.,]/g, '').replace(',', '.');
+    const numericValue = parseFloat(rawValue) || 0;
+    this.value = formatImporteValue(numericValue);
+  }
+}
+
+// Function to format importe values consistently
+function formatImporteValue(value) {
+  if (value !== undefined && value !== null) {
+    // Format number with proper thousand separators and decimal places
+    return new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  }
+  return '';
+}
