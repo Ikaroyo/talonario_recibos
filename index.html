@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plantilla de Recibo Editable</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <!-- Add html2canvas and jsPDF for PDF generation -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="script.js" defer></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: #333;
+    }
+
+    .recibo-container {
+      width: 800px;
+      border: 2px solid #000;
+      margin: 0 auto;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      background-image: url('background.webp');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+    }
+
+    .recibo-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .left-section {
+      background-color: rgba(255, 255, 255, 0.6);
+      border-right: 1px dashed #000;
+      padding: 15px;
+    }
+
+    .middle-section {
+      background-color: rgba(255, 255, 255, 0.6);
+      padding: 15px;
+    }
+
+    .recibo-title {
+      font-weight: bold;
+      text-decoration: underline;
+      font-size: 18px;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+      color: #000;
+      text-shadow: 0 0 2px rgba(255, 255, 255, 0.7);
+    }
+
+    .numero-container {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+    }
+
+    .numero-prefix {
+      font-weight: bold;
+      margin-right: 5px;
+    }
+
+    .field {
+      margin: 10px 0;
+      font-weight: 500;
+    }
+
+    input[type="text"],
+    input[type="date"] {
+      background-color: rgba(255, 255, 255, 0.8);
+      border: none;
+      border-bottom: 1px dotted #000;
+      width: 100%;
+      margin: 5px 0;
+      padding: 5px 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-size: 14px;
+    }
+
+    input:focus {
+      outline: none;
+      border-bottom: 1px solid #000;
+      background-color: rgba(255, 255, 255, 0.95);
+    }
+
+    .logo-container {
+      text-align: center;
+      margin: 10px 0 20px 0;
+      height: 100px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .logo-container img {
+      max-height: 100%;
+      max-width: 100%;
+    }
+
+    .left-logo-container {
+      text-align: center;
+      margin: 10px 0;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .cantidad-pesos {
+      background-color: rgba(245, 245, 245, 0.8);
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 3px;
+      font-style: italic;
+      min-height: auto;
+      height: auto;
+      overflow: visible;
+      word-wrap: break-word;
+      white-space: normal;
+    }
+
+    .total-box {
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid #000;
+      padding: 10px;
+      margin: 10px 0;
+      width: 200px;
+    }
+
+    .total-label {
+      font-weight: bold;
+    }
+
+    .firma {
+      margin-top: 20px;
+      text-align: right;
+    }
+
+    .fecha-container {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .fecha-input {
+      width: 30px !important;
+      text-align: center;
+    }
+
+    .btn {
+      padding: 10px 15px;
+      background-color: #4a6da7;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 5px;
+      transition: background-color 0.3s;
+    }
+
+    .btn:hover {
+      background-color: #3a5d97;
+    }
+
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .image-upload {
+      display: none;
+    }
+
+    @media print {
+      body {
+        padding: 0;
+      }
+
+      input {
+        border: none;
+      }
+
+      .btn-group,
+      .logo-upload-controls {
+        display: none;
+      }
+
+      .recibo-container {
+        box-shadow: none;
+      }
+    }
+
+    /* New styles for better input formatting */
+    input.currency {
+      text-align: right;
+      font-family: monospace;
+    }
+
+    /* Style for the save button */
+    .btn-save {
+      background-color: #28a745;
+    }
+
+    .btn-save:hover {
+      background-color: #218838;
+    }
+
+    /* Expanded styles for cantidad-pesos fields */
+    #cantidad-pesos-1 {
+      min-height: 50px;
+      background-color: transparent;
+      border: none;
+    }
+
+    #cantidad-pesos-2 {
+      min-height: 25px;
+      background-color: transparent;
+      border: none;
+    }
+
+    /* Replace the textarea styling with better looking divs */
+    .cantidad-pesos-display {
+      background-color: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin: 5px 0;
+      min-height: 25px;
+      font-style: italic;
+      color: #333;
+      line-height: 1.4;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    #cantidad-pesos-1 {
+      min-height: 35px;
+    }
+
+    /* Hide the textareas used for PDF generation */
+    .hidden-for-pdf {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="recibo-container">
+    <div class="recibo-grid">
+      <!-- Left Section -->
+      <div class="left-section">
+        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+          <div class="recibo-title">RECIBO</div>
+          <div class="left-logo-container" style="margin-left: 20px;">
+            <img id="logo-left"
+              src="https://seeklogo.com/images/C/club-social-deportivo-y-cultural-el-pimpollo-logo-DAACE34372-seeklogo.com.png"
+              alt="Logo" style="height: 45px; margin-top: -5px;">
+          </div>
+        </div>
+        <div class="numero-container">
+          <span class="numero-prefix">Nº</span>
+          <input type="text" id="numero-left" value="000000" style="width: 80px;">
+        </div>
+        <div class="field">
+          Fecha:
+          <div class="fecha-container">
+            <input type="text" class="fecha-input" id="dia-left" maxlength="2" placeholder="DD">
+            <span>/</span>
+            <input type="text" class="fecha-input" id="mes-left" maxlength="2" placeholder="MM">
+            <span>/</span>
+            <input type="text" class="fecha-input" id="anio-left" maxlength="4" placeholder="AAAA"
+              style="width: 50px !important;">
+          </div>
+        </div>
+
+        <div class="field">
+          Recibimos del Sr.(es):
+          <input type="text" id="nombre-left">
+        </div>
+        <div class="field">
+          Domicilio:
+          <input type="text" id="domicilio-left">
+        </div>
+        <div class="field">
+          CUIT:
+          <input type="text" id="cuit-left">
+        </div>
+        <div class="field">
+          Importe $
+          <input type="text" id="importe-left">
+        </div>
+        <div class="field">
+          Concepto:
+          <input type="text" id="concepto-line1-left">
+          <input type="text" id="concepto-line2-left">
+          <input type="text" id="concepto-line3-left">
+        </div>
+      </div>
+
+      <!-- Middle and Right Sections -->
+      <div class="middle-section" style="grid-column: span 2;">
+        <div style="display: flex; justify-content: flex-end; align-items: start; margin-bottom: 20px;">
+          <img id="logo-main"
+            src="https://seeklogo.com/images/C/club-social-deportivo-y-cultural-el-pimpollo-logo-DAACE34372-seeklogo.com.png"
+            alt="Logo principal" style="height: 60px; margin-right: 40px;">
+          <div>
+            <div class="recibo-title">RECIBO</div>
+            <div class="fecha-container">
+              FECHA:
+              <input type="text" class="fecha-input" id="dia-right" maxlength="2" placeholder="DD">
+              <span>/</span>
+              <input type="text" class="fecha-input" id="mes-right" maxlength="2" placeholder="MM">
+              <span>/</span>
+              <input type="text" class="fecha-input" id="anio-right" maxlength="4" placeholder="AAAA"
+                style="width: 50px !important;">
+            </div>
+            <div class="numero-container">
+              <span class="numero-prefix">Nº</span>
+              <input type="text" id="numero-right" value="000000" style="width: 80px;">
+            </div>
+          </div>
+        </div>
+
+        <div class="field">
+          Recibimos del Sr.(es):
+          <input type="text" id="nombre-right">
+        </div>
+        <div class="field">
+          Domicilio:
+          <input type="text" id="domicilio-right">
+        </div>
+        <div class="field">
+          CUIT:
+          <input type="text" id="cuit-right">
+        </div>
+        <div class="field">
+          La cantidad de pesos:
+          <!-- Replace textareas with styled divs for better appearance -->
+          <div id="cantidad-pesos-1" class="cantidad-pesos-display"></div>
+          <div id="cantidad-pesos-2" class="cantidad-pesos-display"></div>
+        </div>
+        <div class="field">
+          En concepto de
+          <input type="text" id="concepto-line1-right">
+          <input type="text" id="concepto-line2-right">
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+          <div class="total-box">
+            <span class="total-label">TOTAL $</span>
+            <input type="text" id="total-right" class="currency">
+          </div>
+          <div class="firma">
+            <input type="text" style="width: 150px; text-align: center;"><br>
+            FIRMA Y ACLARACIÓN
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn" onclick="window.print()"><i class="fas fa-print"></i> Imprimir Recibo</button>
+    <button class="btn btn-save" onclick="guardarPDF()"><i class="fas fa-save"></i> Guardar PDF</button>
+    <button class="btn btn-new" onclick="nuevoRecibo()"><i class="fas fa-plus-circle"></i> Nuevo Recibo</button>
+    <button class="btn btn-clear" onclick="limpiarCampos()"><i class="fas fa-eraser"></i> Limpiar Campos</button>
+  </div>
+
+  <!-- Include html2canvas and jsPDF properly -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    // Ensure jsPDF is available globally
+    window.jsPDF = window.jspdf.jsPDF;
+  </script>
+
+</body>
+
+</html>
